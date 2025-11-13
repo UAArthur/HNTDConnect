@@ -53,4 +53,14 @@ public class ProductService {
         );
     }
 
+    public boolean existsByUuid(String productId) {
+        return productRepository.existsByUuid(productId);
+    }
+
+    public boolean belongsToOrganization(String productId, String organizationId) {
+        return productRepository.existsByUuidAndOrganization_Uuid(productId, organizationId);
+    }
+
+    //TODO: Add a way, to create tokens with permissions
+    //TODO: ProductPermission enum
 }

@@ -81,7 +81,4 @@ public class ProductController {
                 })
                 .orElseGet(() -> ResponseEntity.status(404).body(new StatusResponse(404, "Product not found in this organization")));
     }
-
-
-
 }

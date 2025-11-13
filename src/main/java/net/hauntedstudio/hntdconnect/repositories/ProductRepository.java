@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<ProductEntity, String> {
     Optional<ProductEntity> findByUuid(String uuid);
     List<ProductEntity> findByOrganization_Uuid(String organizationUuid);
+    boolean existsByUuid(String uuid);
+    boolean existsByUuidAndOrganization_Uuid(String uuid, String organizationUuid);
 }

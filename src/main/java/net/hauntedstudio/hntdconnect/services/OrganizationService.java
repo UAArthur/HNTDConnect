@@ -57,9 +57,7 @@ public class OrganizationService {
     public boolean isMember(String orgUuid, String userUuid) {
         UserEntity user = userService.findByUuid(userUuid).orElse(null);
         if (user == null) return false;
-
         if (!organizationRepository.existsByUuid(orgUuid)) return false;
-
         return organizationMembersRepository.findByOrganization_UuidAndMemberUuid(orgUuid, userUuid).isPresent();
     }
 

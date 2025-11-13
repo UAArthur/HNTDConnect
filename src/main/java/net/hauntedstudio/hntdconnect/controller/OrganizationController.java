@@ -70,8 +70,8 @@ public class OrganizationController {
             return ResponseEntity.ok(responses);
         }
 
-        //If specific check if he's part of that
-        if (!this.organizationService.isMember(orgUuid, userUuid)) {
+        //check if he's part of that org
+        if (!organizationService.isMember(orgUuid, userUuid)) {
             return new ResponseEntity<>(new StatusResponse(403, "User is not member of the given Organization"), HttpStatus.FORBIDDEN);
         }
         //return only that org

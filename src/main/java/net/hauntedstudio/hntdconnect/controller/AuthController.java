@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.Optional;
 
-//TODO: Potential way of making toekns more Secure.
+//TODO: Potential way of making tokens more Secure.
 // - Bind token to the IP address, or somewhat compare the ip or something of the user on every request to make sure the token was not stolen???
 // cons: Kinda performance heavy I would guess, and im not sure in storing the users IP
 // Hash IP, store hash in token, compare on every request??? That may actually work, still performance heavy

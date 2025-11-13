@@ -15,5 +15,5 @@ public interface OrganizationRepository extends JpaRepository<OrganizationEntity
     @Query("SELECT DISTINCT o FROM OrganizationEntity o LEFT JOIN FETCH o.members m WHERE m.uuid = :userUuid")
     java.util.List<OrganizationEntity> findAllByMemberUuid(@Param("userUuid") String userUuid);
 
-    boolean existsByUuidAndMembersContains(String uuid, UserEntity userEntity);
+    boolean existsByUuid(String uuid);
 }

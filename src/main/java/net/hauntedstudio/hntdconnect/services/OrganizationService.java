@@ -3,7 +3,9 @@ package net.hauntedstudio.hntdconnect.services;
 import net.hauntedstudio.hntdconnect.dto.org.CreateOrgRequest;
 import net.hauntedstudio.hntdconnect.dto.org.OrganizationResponse;
 import net.hauntedstudio.hntdconnect.entities.OrganizationEntity;
+import net.hauntedstudio.hntdconnect.entities.OrganizationMembersEntity;
 import net.hauntedstudio.hntdconnect.entities.UserEntity;
+import net.hauntedstudio.hntdconnect.repositories.OrganizationMembersRepository;
 import net.hauntedstudio.hntdconnect.repositories.OrganizationRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,10 +17,12 @@ import java.util.stream.Collectors;
 @Service
 public class OrganizationService {
     private final OrganizationRepository organizationRepository;
+    private final OrganizationMembersRepository organizationMembersRepository;
     private final UserService userService;
 
-    public OrganizationService(OrganizationRepository organizationRepository, UserService userService) {
+    public OrganizationService(OrganizationRepository organizationRepository, OrganizationMembersRepository organizationMembersRepository, UserService userService) {
         this.organizationRepository = organizationRepository;
+        this.organizationMembersRepository = organizationMembersRepository;
         this.userService = userService;
     }
 
@@ -30,9 +34,14 @@ public class OrganizationService {
         org.setWebsite("");
         org.setContactEmail("");
         org.setOwnerUUID(userUuid);
-        Set<UserEntity> members = new HashSet<>();
-        members.add(userService.findByUuid(org.getOwnerUUID()).get());
-        org.setMembers(members);
+
+        OrganizationMembersEntity orgMembersEntity = new OrganizationMembersEntity();
+        orgMembersEntity.setUuid(UUID.randomUUID().toString());
+        orgMembersEntity.setOrganization(org);
+        orgMembersEntity.setMemberUuid(userUuid);
+        orgMembersEntity.setRole("owner");
+        org.getMembers().add(orgMembersEntity);
+
         return organizationRepository.save(org);
     }
 
@@ -45,17 +54,20 @@ public class OrganizationService {
         return organizationRepository.findAllByMemberUuid(userUuid);
     }
 
+    /// Neue Table, die nicht exestiert???? check
+    ///
     public boolean isMember(String orgUuid, String userUuid) {
         UserEntity user = userService.findByUuid(userUuid).orElse(null);
-        if (user == null) {
-            return false;
-        }
-        return organizationRepository.existsByUuidAndMembersContains(orgUuid, user);
+        if (user == null) return false;
+
+        if (!organizationRepository.existsByUuid(orgUuid)) return false;
+
+        return organizationMembersRepository.findByOrganization_UuidAndMemberUuid(orgUuid, userUuid).isPresent();
     }
 
     public OrganizationResponse toResponse(OrganizationEntity org) {
         Set<String> memberUUIDs = org.getMembers().stream()
-                .map(UserEntity::getUuid)
+                .map(OrganizationMembersEntity::getMemberUuid)
                 .collect(Collectors.toSet());
         return new OrganizationResponse(
                 org.getUuid(),

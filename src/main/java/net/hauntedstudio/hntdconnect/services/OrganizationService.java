@@ -54,8 +54,6 @@ public class OrganizationService {
         return organizationRepository.findAllByMemberUuid(userUuid);
     }
 
-    /// Neue Table, die nicht exestiert???? check
-    ///
     public boolean isMember(String orgUuid, String userUuid) {
         UserEntity user = userService.findByUuid(userUuid).orElse(null);
         if (user == null) return false;

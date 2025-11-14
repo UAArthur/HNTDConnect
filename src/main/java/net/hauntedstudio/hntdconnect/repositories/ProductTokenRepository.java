@@ -4,5 +4,5 @@ import net.hauntedstudio.hntdconnect.entities.ProductTokenEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProductTokenRepository extends JpaRepository<ProductTokenEntity, String> {
-
+    ProductTokenEntity findByTokenId(String tokenId);
 }

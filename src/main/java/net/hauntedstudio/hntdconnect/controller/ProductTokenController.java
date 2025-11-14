@@ -3,10 +3,7 @@ package net.hauntedstudio.hntdconnect.controller;
 import net.hauntedstudio.hntdconnect.dto.StatusResponse;
 import net.hauntedstudio.hntdconnect.dto.prdct.token.ProductCreateTokenRequest;
 import net.hauntedstudio.hntdconnect.dto.prdct.token.ProductTokenResponse;
-import net.hauntedstudio.hntdconnect.services.JwtService;
-import net.hauntedstudio.hntdconnect.services.OrganizationService;
-import net.hauntedstudio.hntdconnect.services.ProductService;
-import net.hauntedstudio.hntdconnect.services.TokenService;
+import net.hauntedstudio.hntdconnect.services.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +17,7 @@ public class ProductTokenController {
     private final TokenService tokenService;
     private final JwtService jwtService;
 
-    public ProductTokenController(OrganizationService organizationService, ProductService productService, TokenService tokenService, JwtService jwtService) {
+    public ProductTokenController(OrganizationService organizationService, UserService userService, ProductService productService, TokenService tokenService, JwtService jwtService) {
         this.organizationService = organizationService;
         this.productService = productService;
         this.tokenService = tokenService;
@@ -61,6 +58,61 @@ public class ProductTokenController {
         ), HttpStatus.CREATED);
     }
 
-    //TODO: Add a way to revoke/delete them
-    //TODO: Add a way to reset the token for a tokenId
+    //TODO: Add a way to check if the user has permissions to reset the token
+    /**
+     * Delete a token by its ID
+     * Needs to be part of the organization the token belongs to
+     * @param tokenId
+     * @param authorizationHeader
+     * @return
+     */
+    @DeleteMapping("/token/delete/{tokenId}")
+    public ResponseEntity<?> deleteProductToken(
+            @PathVariable String tokenId,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        String token = authorizationHeader.replace("Bearer ", "");
+        String userUuid = jwtService.getUserUuidFromToken(token);
+        TokenService.TokenPair tokenPair = tokenService.findById(tokenId);
+        if (tokenPair == null) {
+            return new ResponseEntity<>(new StatusResponse(404, "Token not found"), HttpStatus.NOT_FOUND);
+        }
+        if (!organizationService.isMember(tokenPair.organizationId(), userUuid)) {
+            return new ResponseEntity<>(new StatusResponse(403, "User is not member of the given Organization"), HttpStatus.FORBIDDEN);
+        }
+        tokenService.deleteToken(tokenId, tokenPair.token());
+        return new ResponseEntity<>(new StatusResponse(200, "Token deleted successfully"), HttpStatus.OK);
+    }
+
+    //TODO: Add a way to check if the user has permissions to reset the token
+    /**
+     * Reset a token by its ID
+     * Needs to be part of the organization the token belongs to
+     * Used when a token is lost or compromised
+     * @param tokenId
+     * @param authorizationHeader
+     * @return
+     */
+    @PostMapping("/token/reset/{tokenId}")
+    public ResponseEntity<?> resetProductToken(
+            @PathVariable String tokenId,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        String token = authorizationHeader.replace("Bearer ", "");
+        String userUuid = jwtService.getUserUuidFromToken(token);
+        TokenService.TokenPair tokenPair = tokenService.findById(tokenId);
+        if (tokenPair == null) {
+            return new ResponseEntity<>(new StatusResponse(404, "Token not found"), HttpStatus.NOT_FOUND);
+        }
+        if (!organizationService.isMember(tokenPair.organizationId(), userUuid)) {
+            return new ResponseEntity<>(new StatusResponse(403, "User is not member of the given Organization"), HttpStatus.FORBIDDEN);
+        }
+
+        TokenService.TokenPair newToken = tokenService.updateTokenById(tokenPair.organizationId(), tokenPair.hmac());
+        return new ResponseEntity<>(new ProductTokenResponse(
+                tokenPair.organizationId(),
+                tokenPair.id(),
+                newToken.id(),
+                newToken.token()
+        ), HttpStatus.OK);
+    }
+
 }

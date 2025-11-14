@@ -57,11 +57,38 @@ public class TokenService {
                 product,
                 organization
         );
-
-        // DO NOT call product.getTokens().add(productToken) here to avoid double-persist.
         productTokenRepository.save(productToken);
 
-        return new TokenPair(tokenId, name, token, hmac);
+        return new TokenPair(tokenId, organizationId, name, token, hmac);
+    }
+
+    public void deleteToken(String tokenId, String token) {
+        TokenPair existing = findById(tokenId);
+        if (existing == null) {
+            throw new IllegalArgumentException("Token not found: " + tokenId);
+        }
+        String computedHmac = hmacSha256(token);
+        if (!constantTimeEquals(existing.hmac, computedHmac)) {
+            throw new IllegalArgumentException("Invalid token provided for deletion");
+        }
+        productTokenRepository.deleteById(existing.id);
+    }
+
+    public TokenPair updateTokenById(String organizationId, String tokenId) {
+        TokenPair existing = findById(tokenId);
+        if (existing == null) {
+            throw new IllegalArgumentException("Token not found: " + tokenId);
+        }
+        deleteToken(existing.id, existing.hmac);
+        return createToken(organizationId, existing.id, existing.name, 0);
+    }
+
+    public TokenPair findById(String tokenId) {
+        ProductTokenEntity entity = productTokenRepository.findByTokenId(tokenId);
+        if (entity == null) {
+            return null;
+        }
+        return new TokenPair(entity.getTokenId(), entity.getOrganization().getUuid(), entity.getName(), null, entity.getTokenHmac());
     }
 
     private String hmacSha256(String value) {
@@ -84,5 +111,5 @@ public class TokenService {
         return result == 0;
     }
 
-    public record TokenPair(String id, String name, String token, String hmac) {}
+    public record TokenPair(String id, String organizationId, String name, String token, String hmac) { }
 }
